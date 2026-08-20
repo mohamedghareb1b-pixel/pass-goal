@@ -10,8 +10,9 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://passgoal.com";
 // Open Graph + Twitter Card tags — required for Google Discover to ever
 // surface an article (needs a large image, title, description at minimum)
 // and for links to render properly when shared.
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const article = await new DrizzleArticlesRepository().findBySlug(params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const article = await new DrizzleArticlesRepository().findBySlug(slug);
   if (!article) return {};
 
   const url = `${SITE_URL}/articles/${article.slug}`;
@@ -37,9 +38,10 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default async function ArticlePage({ params }: { params: { slug: string } }) {
+export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const articlesRepo = new DrizzleArticlesRepository();
-  const article = await articlesRepo.findBySlug(params.slug);
+  const article = await articlesRepo.findBySlug(slug);
 
   if (!article || !article.publishedAt) {
     notFound();

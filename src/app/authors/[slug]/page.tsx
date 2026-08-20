@@ -4,9 +4,10 @@ import Image from "next/image";
 import { DrizzleAuthorsRepository } from "@/infrastructure/repositories/AuthorsRepository";
 import { DrizzleArticlesRepository } from "@/infrastructure/repositories/ArticlesRepository";
 
-export default async function AuthorPage({ params }: { params: { slug: string } }) {
+export default async function AuthorPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const authorsRepo = new DrizzleAuthorsRepository();
-  const author = await authorsRepo.findBySlug(params.slug);
+  const author = await authorsRepo.findBySlug(slug);
   if (!author) notFound();
 
   const articlesRepo = new DrizzleArticlesRepository();
