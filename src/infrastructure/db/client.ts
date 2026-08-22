@@ -14,9 +14,20 @@ const globalForDb = globalThis as unknown as { queryClient?: ReturnType<typeof p
 // serverless (Vercel) even though everything works fine locally.
 // `connect_timeout` makes a bad/unreachable connection string fail fast
 // with a clear error instead of hanging the request indefinitely.
+// In serverless (Vercel), each function instance is short-lived so we
+// always open a fresh connection per cold-start — no global reuse needed.
+// `max: 1`          → one connection per function instance (correct for serverless)
+// `prepare: false`  → required for Supabase PgBouncer transaction mode
+// `connect_timeout` → fail fast if DB unreachable (don't hang the request)
+// NO idle_timeout   → removing it prevents connections being silently killed
+//                     mid-request when a function stays warm between invocations
 const queryClient =
   globalForDb.queryClient ??
-  postgres(connectionString, { max: 1, prepare: false, connect_timeout: 10, idle_timeout: 20 });
+  postgres(connectionString, {
+    max: 1,
+    prepare: false,
+    connect_timeout: 15,
+  });
 if (process.env.NODE_ENV !== "production") globalForDb.queryClient = queryClient;
 
 export const db = drizzle(queryClient, { schema });
