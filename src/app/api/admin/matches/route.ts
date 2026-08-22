@@ -33,18 +33,29 @@ export async function GET() {
   return NextResponse.json({ matches: rows, teams: teamRows });
 }
 
-// PATCH: admin manually sets/edits the Ticket Link field (the ONLY manual field on a match).
+// PATCH: admin manually sets the Ticket Link or Article Slug on a match.
 export async function PATCH(req: NextRequest) {
-  const { matchId, ticketUrl } = await req.json();
+  const body = await req.json();
+  const { matchId, ticketUrl, linkedArticleSlug } = body;
 
   if (!matchId) {
     return NextResponse.json({ error: "matchId is required" }, { status: 400 });
   }
 
-  await db
-    .update(matches)
-    .set({ ticketUrl: ticketUrl || null })
-    .where(eq(matches.id, matchId));
+  const updateData: Record<string, any> = {};
+
+  if ("ticketUrl" in body) {
+    updateData.ticketUrl = ticketUrl || null;
+  }
+  if ("linkedArticleSlug" in body) {
+    updateData.linkedArticleSlug = linkedArticleSlug || null;
+  }
+
+  if (Object.keys(updateData).length === 0) {
+    return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
+  }
+
+  await db.update(matches).set(updateData).where(eq(matches.id, matchId));
 
   return NextResponse.json({ ok: true });
 }

@@ -11,6 +11,7 @@ interface MatchRow {
   city: string;
   status: "upcoming" | "live" | "finished";
   ticketUrl: string | null;
+  linkedArticleSlug: string | null;
 }
 
 interface TeamRow {
@@ -22,7 +23,9 @@ export default function MatchesManagementPage() {
   const [rows, setRows] = useState<MatchRow[]>([]);
   const [teamsById, setTeamsById] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [savingArticleId, setSavingArticleId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [articleDrafts, setArticleDrafts] = useState<Record<string, string>>({});
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [crestSyncing, setCrestSyncing] = useState(false);
@@ -84,6 +87,23 @@ export default function MatchesManagementPage() {
     setSavingId(null);
   }
 
+  async function saveArticleSlug(matchId: string) {
+    setSavingArticleId(matchId);
+    const linkedArticleSlug = articleDrafts[matchId] ?? "";
+    await fetch("/api/admin/matches", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ matchId, linkedArticleSlug: linkedArticleSlug || null }),
+    });
+    setRows((prev) => prev.map((r) => (r.id === matchId ? { ...r, linkedArticleSlug: linkedArticleSlug || null } : r)));
+    setSavingArticleId(null);
+  }
+
+  // Display team name — fall back gracefully if ID not in our map
+  function teamName(id: string): string {
+    return teamsById[id] ?? id;
+  }
+
   return (
     <div>
       <div className="flex items-start justify-between mb-1">
@@ -110,11 +130,10 @@ export default function MatchesManagementPage() {
         </div>
       </div>
       <p className="text-sm text-ink-soft mb-6">
-        Fixtures sync automatically from the sports API. The Ticket Link column is the only
-        field you edit manually — it&apos;s hidden automatically once a match goes live.
+        Fixtures sync automatically from the sports API. Edit the Ticket Link and Article Link columns manually.
       </p>
 
-      <div className="bg-paper border border-line rounded-2xl overflow-hidden">
+      <div className="bg-paper border border-line rounded-2xl overflow-hidden overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-chalk text-ink-soft text-xs uppercase font-mono">
             <tr>
@@ -123,13 +142,15 @@ export default function MatchesManagementPage() {
               <th className="text-left px-4 py-3">Status</th>
               <th className="text-left px-4 py-3">Ticket Link</th>
               <th className="px-4 py-3"></th>
+              <th className="text-left px-4 py-3">Article Slug</th>
+              <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody>
             {rows.map((m) => (
               <tr key={m.id} className="border-t border-line">
                 <td className="px-4 py-3 font-medium">
-                  {teamsById[m.homeTeamId] ?? m.homeTeamId} vs {teamsById[m.awayTeamId] ?? m.awayTeamId}
+                  {teamName(m.homeTeamId)} vs {teamName(m.awayTeamId)}
                   <div className="text-xs text-ink-soft font-normal">
                     {m.venue} · {m.city}
                   </div>
@@ -161,7 +182,7 @@ export default function MatchesManagementPage() {
                     placeholder={m.status === "upcoming" ? "https://ticketnetwork.com/..." : "Hidden — match not upcoming"}
                     value={drafts[m.id] ?? m.ticketUrl ?? ""}
                     onChange={(e) => setDrafts((d) => ({ ...d, [m.id]: e.target.value }))}
-                    className="w-64 border border-line rounded-lg px-2.5 py-1.5 text-xs disabled:bg-chalk disabled:text-line"
+                    className="w-56 border border-line rounded-lg px-2.5 py-1.5 text-xs disabled:bg-chalk disabled:text-line"
                   />
                 </td>
                 <td className="px-4 py-3">
@@ -173,11 +194,30 @@ export default function MatchesManagementPage() {
                     {savingId === m.id ? "Saving…" : "Save"}
                   </button>
                 </td>
+                {/* Article Slug — links a published article to this match */}
+                <td className="px-4 py-3">
+                  <input
+                    type="text"
+                    placeholder="article-slug"
+                    value={articleDrafts[m.id] ?? m.linkedArticleSlug ?? ""}
+                    onChange={(e) => setArticleDrafts((d) => ({ ...d, [m.id]: e.target.value }))}
+                    className="w-48 border border-line rounded-lg px-2.5 py-1.5 text-xs"
+                  />
+                </td>
+                <td className="px-4 py-3">
+                  <button
+                    onClick={() => saveArticleSlug(m.id)}
+                    disabled={savingArticleId === m.id}
+                    className="text-xs font-bold text-white bg-pitch rounded-lg px-3 py-1.5 disabled:opacity-40"
+                  >
+                    {savingArticleId === m.id ? "Saving…" : "Save"}
+                  </button>
+                </td>
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-ink-soft text-sm">
+                <td colSpan={7} className="px-4 py-8 text-center text-ink-soft text-sm">
                   No matches synced yet — run the sports API sync cron.
                 </td>
               </tr>

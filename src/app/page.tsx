@@ -36,8 +36,7 @@ export default function HomePage() {
 
   return (
     <main>
-      {/* Hero — same purple as the header above, so nav and headline read
-          as one continuous block instead of two stacked bars. */}
+      {/* Hero — compact, no wasted vertical space */}
       <div className="bg-purple text-chalk relative overflow-hidden -mt-px">
         <div
           className="absolute inset-0 opacity-[0.07] pointer-events-none"
@@ -46,20 +45,20 @@ export default function HomePage() {
               "repeating-linear-gradient(90deg, transparent, transparent 38px, rgba(255,255,255,0.6) 38px, rgba(255,255,255,0.6) 39px)",
           }}
         />
-        <div className="max-w-4xl mx-auto px-5 pt-4 pb-8 relative">
-          <div className="flex items-center gap-2 font-mono text-[12px] uppercase tracking-wider text-gold font-bold">
+        <div className="max-w-4xl mx-auto px-5 pt-3 pb-5 relative">
+          <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-gold font-bold">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full rounded-full bg-live pg-live-ring" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-live" />
             </span>
             Live coverage · Premier League
           </div>
-          <h1 className="font-display text-4xl sm:text-5xl mt-3 leading-[1.05]">
+          <h1 className="font-display text-2xl sm:text-3xl mt-2 leading-[1.1]">
             Every matchday,
             <br />
             told properly.
           </h1>
-          <span className="pg-underline block h-[3px] w-16 bg-pitch-bright mt-4 rounded-full" />
+          <span className="pg-underline block h-[3px] w-12 bg-pitch-bright mt-3 rounded-full" />
         </div>
       </div>
 

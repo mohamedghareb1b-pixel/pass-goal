@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { Article, FaqItem } from "@/domain/entities/Article";
 
@@ -53,8 +53,28 @@ export default function ArticleForm({
   const router = useRouter();
   const [title, setTitle] = useState(initial?.title ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
-  const [categoryId, setCategoryId] = useState(initial?.categoryId ?? categories[0]?.id ?? "");
-  const [authorId, setAuthorId] = useState(initial?.authorId ?? authors[0]?.id ?? "");
+
+  // FIX: don't lock categoryId to categories[0] at mount time —
+  // when this form is used in new/page.tsx the categories array is []
+  // initially (fetch hasn't returned yet), so categories[0]?.id is
+  // undefined and the select stays blank even after data loads.
+  // Instead, derive the default lazily in a useEffect.
+  const [categoryId, setCategoryId] = useState(initial?.categoryId ?? "");
+  const [authorId, setAuthorId] = useState(initial?.authorId ?? "");
+
+  // Once categories/authors load (or change), set a default if we have none selected yet
+  useEffect(() => {
+    if (!categoryId && categories.length > 0) {
+      setCategoryId(categories[0].id);
+    }
+  }, [categories]);
+
+  useEffect(() => {
+    if (!authorId && authors.length > 0) {
+      setAuthorId(authors[0].id);
+    }
+  }, [authors]);
+
   const [tagsInput, setTagsInput] = useState((initial?.tags ?? []).join(", "));
   const [metaTitle, setMetaTitle] = useState(initial?.metaTitle ?? "");
   const [metaDescription, setMetaDescription] = useState(initial?.metaDescription ?? "");
